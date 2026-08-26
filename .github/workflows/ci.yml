@@ -25,5 +25,8 @@ jobs:
       - name: Gradle einrichten
         uses: gradle/actions/setup-gradle@v5
 
-      - name: Build und Tests
-        run: ./gradlew build
+      - name: Build
+        run: ./gradlew assemble --no-daemon
+
+      - name: Test
+        run: ./gradlew test --no-daemon
