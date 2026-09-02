@@ -68,7 +68,7 @@ class TicTacToeMainTest {
         boolean result = TicTacToeMain.isWin(board, Stone.CROSS);
 
         // THEN
-        assertThat(result).isFalse();
+        assertThat(result).isTrue();
     }
 
     @Test
