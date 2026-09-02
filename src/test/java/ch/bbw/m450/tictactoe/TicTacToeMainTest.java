@@ -2,94 +2,71 @@ package ch.bbw.m450.tictactoe;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import ch.bbw.m450.tictactoe.TicTacToePlayer.Stone;
 
 class TicTacToeMainTest {
 
-    @Test
-    void besetztesFeldKannNichtAusgewaehltWerden() {
+    private Stone[] board;
 
-        // GIVEN
+    @BeforeEach
+    void setup() {
+        board = new Stone[9];
+    }
+
+    private void set(Stone stone, int... positions) {
+        for (int position : positions) {
+            board[position] = stone;
+        }
+    }
+
+    @Test
+    void givenBesetztesFeld_whenAusgewaehlt_thenFehler() {
         TicTacToePlayer player1 = (board, color) -> 0;
         TicTacToePlayer player2 = (board, color) -> 0;
 
-        // WHEN, THEN
         assertThatThrownBy(() -> TicTacToeMain.play(player1, player2))
                 .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
-    void xGewinntVertikal() {
+    void givenXVertikal_whenSpielfeldGeprueft_thenXGewinnt() {
+        set(Stone.CROSS, 0, 3, 6);
 
-        // GIVEN
-        Stone[] board = {
-                Stone.CROSS, null, null,
-                Stone.CROSS, null, null,
-                Stone.CROSS, null, null
-        };
-
-        // WHEN
         boolean result = TicTacToeMain.isWin(board, Stone.CROSS);
 
-        // THEN
         assertThat(result).isTrue();
     }
 
     @Test
-    void xGewinntHorizontal() {
+    void givenXHorizontal_whenSpielfeldGeprueft_thenXGewinnt() {
+        set(Stone.CROSS, 0, 1, 2);
 
-        // GIVEN
-        Stone[] board = {
-                Stone.CROSS, Stone.CROSS, Stone.CROSS,
-                null, null, null,
-                null, null, null
-        };
-
-        // WHEN
         boolean result = TicTacToeMain.isWin(board, Stone.CROSS);
 
-        // THEN
         assertThat(result).isTrue();
     }
 
     @Test
-    void xGewinntDiagonal() {
+    void givenXDiagonal_whenSpielfeldGeprueft_thenXGewinnt() {
+        set(Stone.CROSS, 0, 4, 8);
 
-        // GIVEN
-        Stone[] board = {
-                Stone.CROSS, null, null,
-                null, Stone.CROSS, null,
-                null, null, Stone.CROSS
-        };
-
-        // WHEN
         boolean result = TicTacToeMain.isWin(board, Stone.CROSS);
 
-        // THEN
         assertThat(result).isTrue();
     }
 
     @Test
-    void keinerGewinnt() {
+    void givenKeinGewinner_whenSpielfeldGeprueft_thenNiemandGewinnt() {
+        set(Stone.CROSS, 0, 2, 3, 7);
+        set(Stone.CIRCLE, 1, 4, 5, 6);
 
-        // GIVEN
-        Stone[] board = {
-                Stone.CROSS, Stone.CIRCLE, Stone.CROSS,
-                Stone.CROSS, Stone.CIRCLE, Stone.CIRCLE,
-                Stone.CIRCLE, Stone.CROSS, null
-        };
-
-        // WHEN
         boolean resultX = TicTacToeMain.isWin(board, Stone.CROSS);
         boolean resultO = TicTacToeMain.isWin(board, Stone.CIRCLE);
 
-        // THEN
         assertThat(resultX).isFalse();
         assertThat(resultO).isFalse();
     }
 }
-
-
-
