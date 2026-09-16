@@ -11,16 +11,14 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container: ghcr.io/flycaptainrex/tictactest-devcontainer:stable
 
     steps:
       - name: Repository auschecken
         uses: actions/checkout@v6
 
       - name: Java einrichten
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '25'
+        run: java --version
 
       - name: Gradle einrichten
         uses: gradle/actions/setup-gradle@v5
@@ -28,5 +26,5 @@ jobs:
       - name: Build
         run: ./gradlew assemble --no-daemon
 
-      - name: Test
-        run: ./gradlew test --no-daemon
+      - name: Test und Coverage
+        run: ./gradlew test jacocoTestReport --no-daemon

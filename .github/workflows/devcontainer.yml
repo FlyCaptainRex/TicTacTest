@@ -1,0 +1,78 @@
+name: Release Dev Container
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: SemVer-Tag prüfen
+        run: |
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Ungültiges Release-Tag: $GITHUB_REF_NAME"
+            exit 1
+          fi
+ 
+      - name: Bei GHCR anmelden
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+ 
+      - name: Docker-Metadaten erzeugen
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/tictactest-devcontainer
+          tags: |
+            type=raw,value=${{ github.ref_name }}
+            type=raw,value=stable
+
+      - name: Devcontainer bauen und pushen
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: .devcontainer/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  update-devcontainer-reference:
+    needs: build-and-push-image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Devcontainer-Version aktualisieren
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/tictactest-devcontainer:${{ github.ref_name }}
+        run: jq --arg image "$IMAGE" '.image = $image' .devcontainer/devcontainer.json > .devcontainer/devcontainer.json.tmp && mv .devcontainer/devcontainer.json.tmp .devcontainer/devcontainer.json
+
+      - name: Pull Request erstellen
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: chore/devcontainer-${{ github.ref_name }}
+          delete-branch: true
+          commit-message: "chore: use devcontainer ${{ github.ref_name }}"
+          title: "chore: update devcontainer to ${{ github.ref_name }}"
+          body: |
+            Das freigegebene Devcontainer-Image wurde als `${{ github.ref_name }}` nach GHCR gepusht.
+
+            Dieser PR aktualisiert die lokale Devcontainer-Konfiguration auf diese freigegebene Version.
