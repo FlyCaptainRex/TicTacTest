@@ -34,7 +34,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/tictactest-devcontainer
+          images: ghcr.io/flycaptainrex/tictactest-devcontainer
           tags: |
             type=raw,value=${{ github.ref_name }}
             type=raw,value=stable
@@ -61,7 +61,7 @@ jobs:
 
       - name: Devcontainer-Version aktualisieren
         env:
-          IMAGE: ghcr.io/${{ github.repository_owner }}/tictactest-devcontainer:${{ github.ref_name }}
+          IMAGE: ghcr.io/flycaptainrex/tictactest-devcontainer:${{ github.ref_name }}
         run: jq --arg image "$IMAGE" '.image = $image' .devcontainer/devcontainer.json > .devcontainer/devcontainer.json.tmp && mv .devcontainer/devcontainer.json.tmp .devcontainer/devcontainer.json
 
       - name: Pull Request erstellen
