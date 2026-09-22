@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>TicTacToe – Coverage Trend</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+  <h1>Test Coverage Trend (main)</h1>
+  <canvas id="coverage-chart" width="900" height="400"></canvas>
+  <script>
+    fetch('coverage-history.csv')
+      .then(response => response.text())
+      .then(csv => {
+        const rows = csv.trim().split('\n').slice(1).map(line => line.split(','));
+        const labels = rows.map(r => `${r[0]} (${r[1]})`);
+        const coverage = rows.map(r => parseFloat(r[2]));
+
+        new Chart(document.getElementById('coverage-chart'), {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Line Coverage (%)',
+              data: coverage,
+              borderColor: '#2e7d32',
+              tension: 0.2,
+              fill: false
+            }]
+          },
+          options: {
+            scales: {
+              y: { min: 0, max: 100, title: { display: true, text: '%' } }
+            }
+          }
+        });
+      });
+  </script>
+</body>
+</html>

@@ -28,3 +28,55 @@ jobs:
 
       - name: Test und Coverage
         run: ./gradlew test jacocoTestReport --no-daemon
+
+  coverage-trend:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    container: ghcr.io/flycaptainrex/tictactest-devcontainer:stable
+    permissions:
+      contents: write
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v6
+
+      - name: Test und JaCoCo-Report erzeugen
+        run: ./gradlew test jacocoTestReport --no-daemon
+
+      - name: Coverage-Wert aus JaCoCo-XML ermitteln
+        id: coverage
+        run: |
+          REPORT=build/reports/jacoco/test/jacocoTestReport.xml
+          LINE_COUNTER=$(grep -o '<counter type="LINE"[^/]*/>' "$REPORT" | tail -1)
+          MISSED=$(echo "$LINE_COUNTER" | grep -o 'missed="[0-9]*"' | grep -o '[0-9]*')
+          COVERED=$(echo "$LINE_COUNTER" | grep -o 'covered="[0-9]*"' | grep -o '[0-9]*')
+          COVERAGE=$(awk -v c="$COVERED" -v m="$MISSED" 'BEGIN { total=c+m; if (total==0) printf "0.0"; else printf "%.1f", (c/total)*100 }')
+          echo "value=$COVERAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Bestehende Coverage-Historie laden
+        run: |
+          mkdir -p site
+          git fetch origin gh-pages:gh-pages 2>/dev/null || true
+          if git show gh-pages:coverage-history.csv > site/coverage-history.csv 2>/dev/null; then
+            echo "Bestehende Historie geladen."
+          else
+            echo "Datum,Commit,Coverage" > site/coverage-history.csv
+          fi
+
+      - name: Neuen Messwert anhaengen
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          SHA=$(git rev-parse --short HEAD)
+          echo "$DATE,$SHA,${{ steps.coverage.outputs.value }}" >> site/coverage-history.csv
+
+      - name: Visualisierung bereitstellen
+        run: cp .github/pages/index.html site/index.html
+
+      - name: Auf GitHub Pages veroeffentlichen
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          publish_branch: gh-pages
+          keep_files: false
