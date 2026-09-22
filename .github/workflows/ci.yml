@@ -12,6 +12,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container: ghcr.io/flycaptainrex/tictactest-devcontainer:stable
+    permissions:
+      contents: read
+      packages: read
 
     steps:
       - name: Repository auschecken
