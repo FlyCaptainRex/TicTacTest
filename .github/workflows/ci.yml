@@ -28,14 +28,24 @@ jobs:
       - name: Gradle einrichten
         uses: gradle/actions/setup-gradle@v5
 
-      - name: Build
-        run: ./gradlew assemble --no-daemon
-
       - name: Test und Coverage
         run: ./gradlew test jacocoTestReport --no-daemon
 
+      - name: Jacoco HTML Report hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-html-report
+          path: build/reports/jacoco/test/html/
+
+      - name: Jacoco XML Report hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-xml-report
+          path: build/reports/jacoco/test/jacocoTestReport.xml
+
   coverage-trend:
     needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -43,44 +53,49 @@ jobs:
     steps:
       - name: Repository auschecken
         uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
         with:
-          java-version: '21'
-          distribution: 'temurin'
+          fetch-depth: 0
 
-      - name: Gradle einrichten
-        uses: gradle/actions/setup-gradle@v5
+      - name: Jacoco XML herunterladen
+        uses: actions/download-artifact@v4
+        with:
+          name: jacoco-xml-report
+          path: build/reports/jacoco/test/
 
-      - name: Test und JaCoCo-Report erzeugen
-        run: ./gradlew test jacocoTestReport --no-daemon
-
-      - name: Coverage-Wert aus JaCoCo-XML ermitteln
+      - name: Coverage-Werte ermitteln
         id: coverage
         run: |
           REPORT=build/reports/jacoco/test/jacocoTestReport.xml
-          LINE_COUNTER=$(grep -o '<counter type="LINE"[^/]*/>' "$REPORT" | tail -1)
-          MISSED=$(echo "$LINE_COUNTER" | grep -o 'missed="[0-9]*"' | grep -o '[0-9]*')
-          COVERED=$(echo "$LINE_COUNTER" | grep -o 'covered="[0-9]*"' | grep -o '[0-9]*')
-          COVERAGE=$(awk -v c="$COVERED" -v m="$MISSED" 'BEGIN { total=c+m; if (total==0) printf "0.0"; else printf "%.1f", (c/total)*100 }')
-          echo "value=$COVERAGE" >> "$GITHUB_OUTPUT"
+          
+          INST_COUNTER=$(grep -o '<counter type="INSTRUCTION"[^/]*/>' "$REPORT" | tail -1)
+          INST_MISSED=$(echo "$INST_COUNTER" | grep -o 'missed="[0-9]*"' | grep -o '[0-9]*')
+          INST_COVERED=$(echo "$INST_COUNTER" | grep -o 'covered="[0-9]*"' | grep -o '[0-9]*')
+          INST_COV=$(awk -v c="$INST_COVERED" -v m="$INST_MISSED" 'BEGIN { total=c+m; if (total==0) printf "0.0"; else printf "%.1f", (c/total)*100 }')
+          
+          BRANCH_COUNTER=$(grep -o '<counter type="BRANCH"[^/]*/>' "$REPORT" | tail -1)
+          BRANCH_MISSED=$(echo "$BRANCH_COUNTER" | grep -o 'missed="[0-9]*"' | grep -o '[0-9]*')
+          BRANCH_COVERED=$(echo "$BRANCH_COUNTER" | grep -o 'covered="[0-9]*"' | grep -o '[0-9]*')
+          BRANCH_COV=$(awk -v c="$BRANCH_COVERED" -v m="$BRANCH_MISSED" 'BEGIN { total=c+m; if (total==0) printf "0.0"; else printf "%.1f", (c/total)*100 }')
+          
+          echo "instruction=$INST_COV" >> "$GITHUB_OUTPUT"
+          echo "branch=$BRANCH_COV" >> "$GITHUB_OUTPUT"
 
-      - name: Bestehende Coverage-Historie laden
+      - name: Historie laden und aktualisieren
         run: |
           mkdir -p site
           git fetch origin gh-pages:gh-pages 2>/dev/null || true
+          
           if git show gh-pages:coverage-history.csv > site/coverage-history.csv 2>/dev/null; then
-            echo "Bestehende Historie geladen."
+            if head -n 1 site/coverage-history.csv | grep -q "Datum,Commit,Coverage"; then
+               echo "Datum,Commit,Instruction,Branch" > site/coverage-history.csv
+            fi
           else
-            echo "Datum,Commit,Coverage" > site/coverage-history.csv
+            echo "Datum,Commit,Instruction,Branch" > site/coverage-history.csv
           fi
-
-      - name: Neuen Messwert anhaengen
-        run: |
+          
           DATE=$(date -u +%Y-%m-%d)
           SHA=$(git rev-parse --short HEAD)
-          echo "$DATE,$SHA,${{ steps.coverage.outputs.value }}" >> site/coverage-history.csv
+          echo "$DATE,$SHA,${{ steps.coverage.outputs.instruction }},${{ steps.coverage.outputs.branch }}" >> site/coverage-history.csv
 
       - name: Visualisierung bereitstellen
         run: cp .github/pages/index.html site/index.html
@@ -92,3 +107,82 @@ jobs:
           publish_dir: ./site
           publish_branch: gh-pages
           keep_files: false
+
+  coverage-pr-gate:
+    needs: build
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - name: Jacoco XML herunterladen
+        uses: actions/download-artifact@v4
+        with:
+          name: jacoco-xml-report
+          path: build/reports/jacoco/test/
+
+      - name: PR Coverage ermitteln
+        id: pr_cov
+        run: |
+          REPORT=build/reports/jacoco/test/jacocoTestReport.xml
+          INST_COUNTER=$(grep -o '<counter type="INSTRUCTION"[^/]*/>' "$REPORT" | tail -1)
+          INST_MISSED=$(echo "$INST_COUNTER" | grep -o 'missed="[0-9]*"' | grep -o '[0-9]*')
+          INST_COVERED=$(echo "$INST_COUNTER" | grep -o 'covered="[0-9]*"' | grep -o '[0-9]*')
+          INST_COV=$(awk -v c="$INST_COVERED" -v m="$INST_MISSED" 'BEGIN { total=c+m; if (total==0) printf "0.0"; else printf "%.1f", (c/total)*100 }')
+          echo "instruction=$INST_COV" >> "$GITHUB_OUTPUT"
+
+      - name: Repository für main Coverage auschecken
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages-branch
+        continue-on-error: true
+
+      - name: Main Coverage ermitteln
+        id: main_cov
+        run: |
+          if [ -f gh-pages-branch/coverage-history.csv ]; then
+            MAIN_COV=$(tail -n 1 gh-pages-branch/coverage-history.csv | awk -F',' '{print $3}')
+            if [ -z "$MAIN_COV" ] || [ "$MAIN_COV" == "Instruction" ]; then MAIN_COV="0.0"; fi
+            echo "instruction=$MAIN_COV" >> "$GITHUB_OUTPUT"
+          else
+            echo "instruction=0.0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Coverage PR Kommentar
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          MAIN_COV: ${{ steps.main_cov.outputs.instruction }}
+          PR_COV: ${{ steps.pr_cov.outputs.instruction }}
+        run: |
+          DIFF=$(awk -v pr="$PR_COV" -v m="$MAIN_COV" 'BEGIN { printf "%.1f", pr - m }')
+          
+          if awk -v pr="$PR_COV" -v m="$MAIN_COV" 'BEGIN { exit (pr >= m ? 0 : 1) }'; then
+            STATUS="PASS - Coverage Gate bestanden"
+            if awk -v diff="$DIFF" 'BEGIN { exit (diff > 0 ? 0 : 1) }'; then
+              SIGN="+"
+            else
+              SIGN=""
+            fi
+          else
+            STATUS="FAIL - Coverage Gate nicht bestanden"
+            SIGN=""
+          fi
+          
+          MSG="### Test Coverage
+          
+          - **main:** \` %\
+          - **PR:** \` %\
+          - **Änderung:** \`$DIFF Prozentpunkte\
+          
+          **$STATUS**"
+          
+          echo "$MSG" > comment.md
+          gh pr comment $PR_NUMBER --body-file comment.md || true
+          
+          if [[ "$STATUS" == *"FAIL"* ]]; then
+            echo "::error::Coverage dropped from $MAIN_COV to $PR_COV"
+            exit 1
+          fi
