@@ -1,4 +1,4 @@
-name: Gradle CI
+ï»¿name: Gradle CI
 
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -132,7 +132,7 @@ jobs:
           INST_COV=$(awk -v c="$INST_COVERED" -v m="$INST_MISSED" 'BEGIN { total=c+m; if (total==0) printf "0.0"; else printf "%.1f", (c/total)*100 }')
           echo "instruction=$INST_COV" >> "$GITHUB_OUTPUT"
 
-      - name: Repository für main Coverage auschecken
+      - name: Repository fÃ¼r main Coverage auschecken
         uses: actions/checkout@v4
         with:
           ref: gh-pages
@@ -171,13 +171,13 @@ jobs:
             SIGN=""
           fi
           
-          MSG="### Test Coverage
+                    MSG="### Test Coverage
           
-          - **main:** \` %\
-          - **PR:** \` %\
-          - **Änderung:** \`$DIFF Prozentpunkte\
+          - **main:** \`${MAIN_COV} %\`
+          - **PR:** \`${PR_COV} %\`
+          - **Ã„nderung:** \`${SIGN}${DIFF} Prozentpunkte\`
           
-          **$STATUS**"
+          **${STATUS}**"
           
           echo "$MSG" > comment.md
           gh pr comment $PR_NUMBER --body-file comment.md || true
@@ -186,3 +186,5 @@ jobs:
             echo "::error::Coverage dropped from $MAIN_COV to $PR_COV"
             exit 1
           fi
+
+
