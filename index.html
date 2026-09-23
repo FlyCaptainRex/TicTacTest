@@ -1,38 +1,68 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>TicTacToe – Coverage Trend</title>
+  <title>TicTacTest Coverage Time Series</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; text-align: center; }
+    .chart-container { width: 80%; margin: 40px auto; }
+  </style>
 </head>
 <body>
-  <h1>Test Coverage Trend (main)</h1>
-  <canvas id="coverage-chart" width="900" height="400"></canvas>
+  <div class="chart-container">
+    <canvas id="instruction-chart"></canvas>
+  </div>
+  <div class="chart-container">
+    <canvas id="branch-chart"></canvas>
+  </div>
   <script>
-    fetch('coverage-history.csv')
+    fetch("coverage-history.csv")
       .then(response => response.text())
       .then(csv => {
-        const rows = csv.trim().split('\n').slice(1).map(line => line.split(','));
-        const labels = rows.map(r => `${r[0]} (${r[1]})`);
-        const coverage = rows.map(r => parseFloat(r[2]));
+        const rows = csv.trim().split("\n").slice(1).map(line => line.split(","));
+        const labels = rows.map(r => r[1]); // Commit Hash
+        const instructionCov = rows.map(r => parseFloat(r[2]));
+        const branchCov = rows.map(r => parseFloat(r[3]));
 
-        new Chart(document.getElementById('coverage-chart'), {
-          type: 'line',
+        const commonOptions = {
+          responsive: true,
+          scales: {
+            y: { min: 0, max: 100, title: { display: true, text: "%" } },
+            x: { title: { display: true, text: "commit" } }
+          }
+        };
+
+        new Chart(document.getElementById("instruction-chart"), {
+          type: "line",
           data: {
             labels: labels,
             datasets: [{
-              label: 'Line Coverage (%)',
-              data: coverage,
-              borderColor: '#2e7d32',
-              tension: 0.2,
-              fill: false
+              label: "Instruction coverage",
+              data: instructionCov,
+              borderColor: "#7cfc00",
+              backgroundColor: "rgba(124, 252, 0, 0.3)",
+              tension: 0.4,
+              fill: true
             }]
           },
-          options: {
-            scales: {
-              y: { min: 0, max: 100, title: { display: true, text: '%' } }
-            }
-          }
+          options: commonOptions
+        });
+
+        new Chart(document.getElementById("branch-chart"), {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [{
+              label: "Branch coverage",
+              data: branchCov,
+              borderColor: "#7cfc00",
+              backgroundColor: "rgba(124, 252, 0, 0.3)",
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: commonOptions
         });
       });
   </script>
