@@ -36,7 +36,12 @@ jobs:
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    container: ghcr.io/flycaptainrex/tictactest-devcontainer:stable
+    container:
+      image: ghcr.io/flycaptainrex/tictactest-devcontainer:stable
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      options: --user root
     permissions:
       contents: write
 
