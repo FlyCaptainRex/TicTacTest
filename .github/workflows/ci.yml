@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/flycaptainrex/tictactest-devcontainer:latest
+      options: --user 0:0
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.CR_PAT }}

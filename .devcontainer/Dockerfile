@@ -11,5 +11,3 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --gid 1000 vscode \
     && useradd --uid 1000 --gid vscode --create-home vscode
-
-USER vscode
