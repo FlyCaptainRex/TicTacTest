@@ -2,8 +2,13 @@ name: Release Dev Container
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*.*.*'
+    paths-ignore:
+      - '.devcontainer/devcontainer.json'
+      - '.github/workflows/ci.yml'
   workflow_dispatch:
 
 jobs:
@@ -38,7 +43,9 @@ jobs:
         with:
           images: ghcr.io/flycaptainrex/tictactest-devcontainer
           tags: |
-            type=raw,value=${{ github.ref_name }}
+            type=sha,prefix=sha-
+            type=ref,event=branch
+            type=ref,event=tag
             type=raw,value=stable
 
       - name: Devcontainer bauen und pushen
@@ -62,19 +69,29 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Devcontainer-Version aktualisieren
+        id: update-image
         env:
-          IMAGE: ghcr.io/flycaptainrex/tictactest-devcontainer:${{ github.ref_name }}
-        run: jq --arg image "$IMAGE" '.image = $image' .devcontainer/devcontainer.json > .devcontainer/devcontainer.json.tmp && mv .devcontainer/devcontainer.json.tmp .devcontainer/devcontainer.json
+          IMAGE_TAG: sha-${GITHUB_SHA::7}
+        run: |
+          IMAGE="ghcr.io/flycaptainrex/tictactest-devcontainer:${IMAGE_TAG}"
+          echo "image_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+          jq --arg image "$IMAGE" '.image = $image' .devcontainer/devcontainer.json > .devcontainer/devcontainer.json.tmp
+          mv .devcontainer/devcontainer.json.tmp .devcontainer/devcontainer.json
+          for workflow in .github/workflows/*.yml .github/workflows/*.yaml; do
+            [ -f "$workflow" ] || continue
+            [ "$workflow" = ".github/workflows/devcontainer.yml" ] && continue
+            sed -i -E "s#ghcr.io/flycaptainrex/tictactest-devcontainer:[^[:space:]]+#${IMAGE}#g" "$workflow"
+          done
 
       - name: Pull Request erstellen
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: chore/devcontainer-${{ github.ref_name }}
+          branch: chore/update-devcontainer-image
           delete-branch: true
-          commit-message: "chore: use devcontainer ${{ github.ref_name }}"
-          title: "chore: update devcontainer to ${{ github.ref_name }}"
+          commit-message: "chore: update devcontainer image to ${{ steps.update-image.outputs.image_tag }}"
+          title: "chore: update devcontainer image to ${{ steps.update-image.outputs.image_tag }}"
           body: |
-            Das freigegebene Devcontainer-Image wurde als `${{ github.ref_name }}` nach GHCR gepusht.
+            Das Devcontainer-Image wurde nach erfolgreichem Build nach GHCR gepusht.
 
-            Dieser PR aktualisiert die lokale Devcontainer-Konfiguration auf diese freigegebene Version.
+            Dieser PR aktualisiert `.devcontainer/devcontainer.json` und die CI-Workflows auf `ghcr.io/flycaptainrex/tictactest-devcontainer:${{ steps.update-image.outputs.image_tag }}`.

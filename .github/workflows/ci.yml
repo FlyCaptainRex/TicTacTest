@@ -11,6 +11,12 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flycaptainrex/tictactest-devcontainer:latest
+      options: --user 0:0
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.CR_PAT }}
     permissions:
       contents: read
       packages: read
@@ -19,17 +25,14 @@ jobs:
       - name: Repository auschecken
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v5
-        with:
-          java-version: '21'
-          distribution: 'temurin'
+      - name: Java-Version prüfen
+        run: java --version
 
       - name: Gradle einrichten
         uses: gradle/actions/setup-gradle@v5
 
-      - name: Test und Coverage
-        run: ./gradlew test jacocoTestReport --no-daemon
+      - name: Test, Coverage und Mutation Testing
+        run: ./gradlew test jacocoTestReport pitest --no-daemon
 
       - name: Jacoco HTML Report hochladen
         uses: actions/upload-artifact@v4
@@ -42,6 +45,12 @@ jobs:
         with:
           name: jacoco-xml-report
           path: build/reports/jacoco/test/jacocoTestReport.xml
+
+      - name: PIT Mutation Report hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: pitest-report
+          path: build/reports/pitest/
 
   coverage-trend:
     needs: build

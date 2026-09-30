@@ -1,6 +1,7 @@
 plugins {
 	id 'java'
 	id 'jacoco'
+	id 'info.solidsoft.pitest' version '1.19.0'
 }
 
 java {
@@ -16,6 +17,14 @@ repositories {
 
 test {
 	useJUnitPlatform()
+}
+
+pitest {
+	targetClasses = ['ch.bbw.m450.tictactoe.*']
+	targetTests = ['ch.bbw.m450.tictactoe.*']
+	junit5PluginVersion = '1.2.1'
+	outputFormats = ['HTML', 'XML']
+	timestampedReports = false
 }
 
 jacocoTestReport {
