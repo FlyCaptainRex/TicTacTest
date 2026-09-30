@@ -31,8 +31,8 @@ jobs:
       - name: Gradle einrichten
         uses: gradle/actions/setup-gradle@v5
 
-      - name: Test und Coverage
-        run: ./gradlew test jacocoTestReport --no-daemon
+      - name: Test, Coverage und Mutation Testing
+        run: ./gradlew test jacocoTestReport pitest --no-daemon
 
       - name: Jacoco HTML Report hochladen
         uses: actions/upload-artifact@v4
@@ -45,6 +45,12 @@ jobs:
         with:
           name: jacoco-xml-report
           path: build/reports/jacoco/test/jacocoTestReport.xml
+
+      - name: PIT Mutation Report hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: pitest-report
+          path: build/reports/pitest/
 
   coverage-trend:
     needs: build
