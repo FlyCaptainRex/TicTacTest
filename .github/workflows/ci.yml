@@ -32,7 +32,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v5
 
       - name: Test, Coverage und Mutation Testing
-        run: ./gradlew test jacocoTestReport pitest --no-daemon
+        run: ./gradlew test jacocoTestReport jacocoTestCoverageVerification pitest --no-daemon
 
       - name: Jacoco HTML Report hochladen
         uses: actions/upload-artifact@v4
@@ -195,5 +195,4 @@ jobs:
             echo "::error::Coverage dropped from $MAIN_COV to $PR_COV"
             exit 1
           fi
-
 

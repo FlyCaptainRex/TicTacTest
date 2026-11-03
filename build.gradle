@@ -34,6 +34,24 @@ jacocoTestReport {
 	}
 }
 
+jacocoTestCoverageVerification {
+	dependsOn test
+
+	violationRules {
+		rule {
+			limit {
+				counter = 'BRANCH'
+				value = 'COVEREDRATIO'
+				minimum = 0.90
+			}
+		}
+	}
+}
+
+tasks.named('check') {
+	dependsOn tasks.named('jacocoTestCoverageVerification')
+}
+
 dependencies {
 testImplementation 'org.assertj:assertj-core:3.27.7'
 testImplementation 'org.junit.jupiter:junit-jupiter:6.1.3'
