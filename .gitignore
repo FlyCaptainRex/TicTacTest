@@ -3,8 +3,14 @@
 !.devcontainer/
 
 build/
+bin/
+.jqwik-database
 !**/src/main/**/build/
+bin/
+.jqwik-database
 !**/src/test/**/build/
+bin/
+.jqwik-database
 
 src/generated/
 
