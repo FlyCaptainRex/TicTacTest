@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/flycaptainrex/tictactest-devcontainer:latest
+      image: ghcr.io/flycaptainrex/tictactest-devcontainer:stable
       options: --user 0:0
       credentials:
         username: ${{ github.actor }}

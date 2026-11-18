@@ -1,0 +1,72 @@
+name: Release Application
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release Tag (z.B. v1.0.3)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  build-jar:
+    name: Build Executable JAR
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flycaptainrex/tictactest-devcontainer:stable
+      options: --user 0:0
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.CR_PAT }}
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Gradle einrichten
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: JAR bauen
+        run: ./gradlew jar --no-daemon
+
+      - name: JAR als Artifact hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: tictactoe-binary
+          path: build/libs/tictactoe.jar
+
+  publish-release:
+    name: Publish GitHub Release
+    needs: build-jar
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: JAR herunterladen
+        uses: actions/download-artifact@v4
+        with:
+          name: tictactoe-binary
+          path: build/libs/
+
+      - name: GitHub Release erstellen und JAR anhängen
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_TAG: ${{ github.event.inputs.tag_name }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          TAG="${INPUT_TAG:-$REF_NAME}"
+          if [ -z "$TAG" ] || [ "$TAG" = "main" ]; then
+            TAG="v1.0.0-snapshot"
+          fi
+          
+          echo "Erstelle GitHub Release für Tag: $TAG"
+          gh release create "$TAG" build/libs/tictactoe.jar \
+            --title "Release $TAG" \
+            --generate-notes
+

@@ -10,11 +10,10 @@ java {
     }
 }
 
-
 repositories {
 	mavenCentral()
 }
-
+ 
 test {
 	useJUnitPlatform()
 }
@@ -44,6 +43,11 @@ jacocoTestCoverageVerification {
 				value = 'COVEREDRATIO'
 				minimum = 0.90
 			}
+			limit {
+				counter = 'INSTRUCTION'
+				value = 'COVEREDRATIO'
+				minimum = 0.90
+			}
 		}
 	}
 }
@@ -52,8 +56,20 @@ tasks.named('check') {
 	dependsOn tasks.named('jacocoTestCoverageVerification')
 }
 
+jar {
+	archiveBaseName = 'tictactoe'
+	manifest {
+		attributes(
+			'Main-Class': 'ch.bbw.m450.tictactoe.TicTacToeMain',
+			'Implementation-Title': 'TicTacToe'
+		)
+	}
+}
+
 dependencies {
-testImplementation 'org.assertj:assertj-core:3.27.7'
-testImplementation 'org.junit.jupiter:junit-jupiter:6.1.3'
-testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.junit-pioneer:junit-pioneer:2.3.0'
+    testImplementation 'net.jqwik:jqwik:1.9.2'
+    testImplementation 'org.assertj:assertj-core:3.27.7'
+    testImplementation 'org.junit.jupiter:junit-jupiter:6.1.3'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }

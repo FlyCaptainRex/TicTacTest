@@ -47,6 +47,7 @@ jobs:
             type=ref,event=branch
             type=ref,event=tag
             type=raw,value=stable
+            type=raw,value=latest
 
       - name: Devcontainer bauen und pushen
         uses: docker/build-push-action@v6
