@@ -110,3 +110,4 @@ In `build.gradle` ist `jacocoTestCoverageVerification` direkt an den Task `check
 ### 6.3 CI/CD & Time-Series PR-Gate
 * **Time-Series Coverage:** Jeder Push auf `main` aktualisiert `coverage-history.csv` auf dem Branch `gh-pages` und visualisiert den Trend via HTML/Chart.
 * **PR-Gate:** Bei jedem Pull Request vergleicht die GitHub Action die Branch-Coverage mit dem `main`-Stand. Fällt die Coverage, schlägt der CI-Check fehl und blockiert den Merge.
+

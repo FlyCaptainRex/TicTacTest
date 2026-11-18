@@ -84,3 +84,4 @@ class TicTacToePropertyTest {
 		return Arbitraries.integers().between(0, 2);
 	}
 }
+

@@ -86,3 +86,4 @@ class PerfectPlayerTest {
 		assertThat(winner).isNull();
 	}
 }
+

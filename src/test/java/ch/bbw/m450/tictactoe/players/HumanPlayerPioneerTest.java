@@ -36,3 +36,4 @@ class HumanPlayerPioneerTest {
 		assertThat(move).isEqualTo(0);
 	}
 }
+

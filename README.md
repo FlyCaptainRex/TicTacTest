@@ -65,3 +65,4 @@ java -jar build/libs/tictactoe.jar
 * **`release.yml` (Binary Application Release):**
   * Erstellt bei SemVer-Tags ein offizielles GitHub Release mit generierten Release Notes.
   * Baut und hängt die ausführbare Binärdatei `tictactoe.jar` als Download-Asset an.
+
