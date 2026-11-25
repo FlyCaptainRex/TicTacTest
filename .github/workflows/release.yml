@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Release Tag (z.B. v1.0.3)'
+        description: 'Release Tag (z.B. v1.0.4)'
         required: false
         default: ''
 
@@ -23,7 +23,7 @@ jobs:
       options: --user 0:0
       credentials:
         username: ${{ github.actor }}
-        password: ${{ secrets.CR_PAT }}
+        password: ${{ secrets.CR_PAT || secrets.GITHUB_TOKEN }}
     steps:
       - name: Repository auschecken
         uses: actions/checkout@v4
@@ -41,7 +41,7 @@ jobs:
           path: build/libs/tictactoe.jar
 
   publish-release:
-    name: Publish GitHub Release
+    name: GitHub Release veroeffentlichen
     needs: build-jar
     runs-on: ubuntu-latest
     steps:
@@ -54,7 +54,7 @@ jobs:
           name: tictactoe-binary
           path: build/libs/
 
-      - name: GitHub Release erstellen und JAR anhängen
+      - name: GitHub Release erstellen und JAR anhaengen
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           INPUT_TAG: ${{ github.event.inputs.tag_name }}
@@ -64,9 +64,8 @@ jobs:
           if [ -z "$TAG" ] || [ "$TAG" = "main" ]; then
             TAG="v1.0.0-snapshot"
           fi
-          
-          echo "Erstelle GitHub Release für Tag: $TAG"
+
+          echo "Erstelle GitHub Release fuer Tag: $TAG"
           gh release create "$TAG" build/libs/tictactoe.jar \
             --title "Release $TAG" \
             --generate-notes
-
