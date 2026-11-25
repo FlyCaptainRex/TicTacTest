@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TicTacTest - Web Konsole</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎮 TicTacTest Web Konsole</h1>
+            <div class="version-info">
+                <span id="version">Version: v0.0.1</span>
+                <span id="status" class="status-indicator">●</span>
+            </div>
+        </header>
+
+        <main>
+            <div class="terminal-wrapper">
+                <iframe 
+                    id="terminal-iframe" 
+                    src="about:blank"
+                    frameborder="0"
+                    allow="fullscreen"
+                    title="TicTacTest Game Terminal">
+                </iframe>
+            </div>
+
+            <div class="controls">
+                <button id="reload-btn" onclick="reloadGame()">🔄 Spiel neu laden</button>
+                <button id="clear-btn" onclick="clearTerminal()">🗑️ Konsole löschen</button>
+                <span id="info-text" class="info-text"></span>
+            </div>
+
+            <div class="instructions">
+                <h2>Anleitung</h2>
+                <p><strong>Zug machen:</strong> Geben Sie eine Zahl von 1-9 ein und drücken Sie Enter</p>
+                <p><strong>Spielfeld:</strong></p>
+                <pre>
+ 1 | 2 | 3
+-----------
+ 4 | 5 | 6
+-----------
+ 7 | 8 | 9
+                </pre>
+                <p><strong>Beispiel:</strong> Geben Sie <code>5</code> ein für die Mitte</p>
+            </div>
+        </main>
+
+        <footer>
+            <p>Backend: <span id="backend-url">Lädt...</span></p>
+            <p><small>© 2024 TicTacTest | M450 Projekt</small></p>
+        </footer>
+    </div>
+
+    <script src="config.js"></script>
+</body>
+</html>
